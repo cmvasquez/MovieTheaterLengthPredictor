@@ -44,16 +44,12 @@ python -m movie_predictor.cli now-playing --pages 3 --api-key $env:TMDB_API_KEY
 - If a public end date is available via distributors or exhibitors, prefer that source.
 - Region defaults to `US`; you can adapt `movie_predictor/config.py` if needed.
 
-## Next steps
-
-- Add a historical mode to search any movie and estimate original theatrical run length.
-- Incorporate weekend box office data to improve signals.
-
-
 ## Plans
 - Need to fix the poster styles on the main screen
 - Fix the scrolling
 - Fix the logic for end date
 - Fix the logic for the predictor
 - Fix the gui make it pretty
+- Add a historical mode to search any movie and estimate original theatrical run length.
+- Incorporate weekend box office data to improve signals.
 - Literally fix everything ig damn
