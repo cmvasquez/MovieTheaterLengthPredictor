@@ -50,7 +50,7 @@ python -m movie_predictor.cli now-playing --pages 3 --api-key $env:TMDB_API_KEY
 - Incorporate weekend box office data to improve signals.
 
 
-##Plans
+## Plans
 - Need to fix the poster styles on the main screen
 - Fix the scrolling
 - Fix the logic for end date
