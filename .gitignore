@@ -1,0 +1,12 @@
+# Local environment
+.env
+
+# PyInstaller build artifacts
+build/
+dist/
+*.spec
+
+# Python
+__pycache__/
+*.pyc
+.venv/
