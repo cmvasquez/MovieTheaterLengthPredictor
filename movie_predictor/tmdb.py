@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional
 import requests
 
 from .config import get_settings
+from datetime import date, datetime
 
 
 class TMDbClient:
@@ -71,3 +72,65 @@ class TMDbClient:
         if year:
             params["year"] = year
         return self._get("search/movie", params)
+
+    def get_run_start_date(self, movie_id: int, region: Optional[str] = None, today: Optional[date] = None) -> Optional[date]:
+        """Pick the start date for the current theatrical run.
+
+        Heuristic: choose the most recent Theatrical (type 3) or Theatrical (limited) (type 2)
+        release date in the given region that is not in the future. If none found in region,
+        fall back to any region. Returns a date or None.
+        """
+        data = self.movie_release_dates(movie_id)
+        region = (region or self.region) or "US"
+        today = today or date.today()
+
+        def parse_tmdb_dt(s: str) -> Optional[date]:
+            # Examples: 2022-09-02T00:00:00.000Z
+            if not s:
+                return None
+            try:
+                # Trim Z if present
+                if s.endswith("Z"):
+                    s2 = s[:-1]
+                    try:
+                        dt = datetime.strptime(s2, "%Y-%m-%dT%H:%M:%S.%f")
+                    except ValueError:
+                        dt = datetime.strptime(s2, "%Y-%m-%dT%H:%M:%S")
+                else:
+                    try:
+                        dt = datetime.strptime(s, "%Y-%m-%dT%H:%M:%S.%f")
+                    except ValueError:
+                        dt = datetime.strptime(s, "%Y-%m-%dT%H:%M:%S")
+                return dt.date()
+            except Exception:
+                try:
+                    return datetime.strptime(s[:10], "%Y-%m-%d").date()
+                except Exception:
+                    return None
+
+        def pick(results_list: List[Dict[str, Any]]) -> Optional[date]:
+            theatrical_types = {2, 3}
+            candidates: List[date] = []
+            for entry in results_list or []:
+                rds = entry.get("release_dates") or []
+                for rd in rds:
+                    t = rd.get("type")
+                    if t not in theatrical_types:
+                        continue
+                    d = parse_tmdb_dt(rd.get("release_date"))
+                    if not d or d > today:
+                        continue
+                    candidates.append(d)
+            if not candidates:
+                return None
+            return sorted(candidates, reverse=True)[0]
+
+        results = data.get("results") or []
+        # Try region first
+        region_block = next((x for x in results if (x.get("iso_3166_1") or "").upper() == region.upper()), None)
+        if region_block:
+            dt = pick([region_block])
+            if dt:
+                return dt
+        # Fallback any region
+        return pick(results)
